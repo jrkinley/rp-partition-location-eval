@@ -18,8 +18,15 @@ owlshop-frontend-events:2 has more than 1 replica in use2-az1
 ```
 
 ## Auth
-If you require a sasl mechanism of SCRAM_SHA_512 (rather than SCRAM_SHA_256), run the tool as follows:
+If you require a sasl mechanism of `SCRAM_SHA_512` (rather than `SCRAM_SHA_256`), run the tool as follows:
 
 ```shell
-go run main.go --seed seed-redacted.fmc.prd.cloud.redpanda.com:9092 --username pmw --password redacted --use512 true
+go run main.go --seed seed-redacted.fmc.prd.cloud.redpanda.com:9092 --username pmw --password redacted --use512=true
+```
+
+## Verbose
+To print the location information for all partitions, enable verbose mode:
+
+```shell
+go run main.go --seed seed-redacted.fmc.prd.cloud.redpanda.com:9092 --username pmw --password redacted --verbose=true
 ```

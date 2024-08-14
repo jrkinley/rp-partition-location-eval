@@ -5,12 +5,14 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 )
 
 var locations map[int32]string
+var verbose *bool
 
 func main() {
 
@@ -20,6 +22,7 @@ func main() {
 	user := flag.String("username", "", "username")
 	pass := flag.String("password", "", "password")
 	useSha512 := flag.Bool("use512", false, "whether to use SCRAM_SHA_512")
+	verbose = flag.Bool("verbose", false, "verbose")
 
 	flag.Parse()
 
@@ -62,7 +65,18 @@ func main() {
 	defer admin.Close()
 
 	for _, broker := range brokerMetadata.Brokers {
-		locations[broker.NodeID] = *broker.Rack
+		if broker.Rack != nil {
+			locations[broker.NodeID] = *broker.Rack
+		}
+	}
+
+	if len(locations) > 0 {
+		fmt.Println("Cluster rack awareness config:")
+		for id, rack := range locations {
+			fmt.Printf("Node ID: %d, Rack: %s \n", id, rack)
+		}
+	} else {
+		panic("No cluster rack awareness config")
 	}
 
 	resp, err := admin.ListTopicsWithInternal(ctx)
@@ -79,7 +93,9 @@ func process(pd kadm.PartitionDetail) {
 	}
 	for location, count := range topicLocations {
 		if count > 1 {
-			fmt.Printf("%s:%v has more than 1 replica in %s\n", pd.Topic, pd.Partition, location)
+			fmt.Printf("WARN: %s:%v has more than 1 replica in: %s\n", pd.Topic, pd.Partition, location)
+		} else if *verbose {
+			fmt.Printf("INFO: %s:%v has a single replica in %s\n", pd.Topic, pd.Partition, location)
 		}
 	}
 }
